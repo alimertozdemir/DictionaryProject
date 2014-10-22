@@ -1,0 +1,15 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+
+    </style>
+   <style name="EditTextStyle" parent="@android:style/Widget.EditText">
+       <item name="android:textSize">18sp</item>
+       <item name="android:background">@drawable/edittext_selector</item>
+       <item name="android:padding">10dp</item>
+       <item name="android:singleLine">false</item>
+   </style>
+
+</resources>
