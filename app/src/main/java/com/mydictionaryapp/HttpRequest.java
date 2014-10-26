@@ -31,12 +31,14 @@ public class HttpRequest {
         myActivity = activity;
     }
 
-    public void makeHttpPostWithVolley(String baseUrl, final Map<String, String> hmParams){
+    public void makeHttpPostWithVolley(String baseUrl, final Map<String, String> hmParams, boolean isProgressDialogEnabled){
         RequestQueue queue = Volley.newRequestQueue(myActivity);
 
         final ProgressDialog pDialog = new ProgressDialog(myActivity);
         pDialog.setMessage("Loading...");
-        pDialog.show();
+        if (isProgressDialogEnabled == true){
+            pDialog.show();
+        }
 
         StringRequest getRequest = new StringRequest(Request.Method.POST, baseUrl,
                 new Response.Listener<String>()
