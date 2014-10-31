@@ -1,13 +1,17 @@
 package com.mydictionaryapp.utils;
 
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.view.View;
+import android.os.DropBoxManager;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 /**
@@ -37,6 +41,21 @@ public class AppUtils {
         if (!i.isAvailable())
             return false;
         return true;
+    }
+
+    public static void gotoActivityWithResult(Activity activity, Class nextActivityClass, HashMap<String, Serializable> postIntentData, int requestCode){
+        Intent intent = new Intent(activity, nextActivityClass);
+
+        if (postIntentData != null){
+            Iterator<Map.Entry<String, Serializable>> it = postIntentData.entrySet().iterator();
+            while (it.hasNext()){
+                Map.Entry<String, Serializable> entry = it.next();
+                String key = entry.getKey();
+                Serializable value = entry.getValue();
+                intent.putExtra(key, value);
+            }
+        }
+        activity.startActivityForResult(intent, requestCode);
     }
 
 }

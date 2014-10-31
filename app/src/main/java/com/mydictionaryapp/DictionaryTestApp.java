@@ -1,6 +1,13 @@
 
 package com.mydictionaryapp;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -12,6 +19,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
@@ -23,18 +31,12 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.mydictionaryapp.model.Dictionary;
-import com.mydictionaryapp.utils.AppUtils;
-
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import com.google.gson.Gson;
+import com.mydictionaryapp.model.Dictionary;
+import com.mydictionaryapp.model.SearchHistoryBeans;
+import com.mydictionaryapp.utils.AppUtils;
 
 public class DictionaryTestApp extends Activity implements OnClickListener, OnItemSelectedListener,
         HttpRequestCallback, TextToSpeech.OnInitListener {
@@ -53,9 +55,11 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
     private Button btnSend;
     private Gson gson;
     private Spinner spinnerFrom, spinnerTo;
-    // private String item = "";
+    private String item = "English";
     private ImageButton ibMic;
     private TextToSpeech tts;
+    ArrayList<String> searchedItems = new ArrayList<String>(50);
+    SearchHistoryBeans searchHistory = new SearchHistoryBeans();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,8 +74,8 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
         btnSend.setOnClickListener(this);
         httpRequest = new HttpRequest(DictionaryTestApp.this);
 
-        RelativeLayout layoutDictionaryActivity = (RelativeLayout) findViewById(R.id.rlDictionaryActivity);
-        layoutDictionaryActivity.setOnClickListener(this);
+        //RelativeLayout layoutDictionaryActivity = (RelativeLayout) findViewById(R.id.rlDictionaryActivity);
+        // layoutDictionaryActivity.setOnClickListener(this);
 
         spinnerFrom = (Spinner) findViewById(R.id.languageFrom);
         spinnerTo = (Spinner) findViewById(R.id.languageTo);
@@ -79,19 +83,41 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
         ibMic = (ImageButton) findViewById(R.id.ibMic);
         ibMic.setOnClickListener(this);
 
-        AdView adView = (AdView) this.findViewById(R.id.adMob);
+        final AdView adView = (AdView) this.findViewById(R.id.adMob);
         // request TEST ads to avoid being disabled for clicking your own ads
         AdRequest adRequest = new AdRequest.Builder()
                 .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)// This is for
                                                             // emulators
                 // test mode on DEVICE (this example code must be replaced with
                 // your device uniquq ID)
-                .addTestDevice("") // Galaxy S2
+                .addTestDevice("2A10FF0C45ED8D55276EC0A8F57F8B9A") // Galaxy S2
                 .build();
         adView.loadAd(adRequest);
 
+        final View activityRootView = findViewById(R.id.rlDictionaryActivity);
+        activityRootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                int heightDiff = activityRootView.getRootView().getHeight() - activityRootView.getHeight();
+                if (heightDiff > 200) { // if more than 100 pixels, its probably a keyboard...
+                    adView.setVisibility(View.GONE);
+                    Log.d("View Tree Observer : ", "Klavye açıldı > " + heightDiff);
+                } else {
+                    Log.d("View Tree Observer : ", "Klavye kapandı > " + heightDiff);
+                    adView.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+        /* etInput.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean b) {
+                adView.setVisibility(b ? View.INVISIBLE : View.VISIBLE);
+            }
+        }); */
+
         List<String> languages = new ArrayList<String>();
-        languages.add("Select");
+        languages.add("Auto Detect");
         languages.add("Russian");
         languages.add("Polish");
         languages.add("English");
@@ -106,12 +132,13 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerFrom.setAdapter(dataAdapter);
         spinnerTo.setAdapter(dataAdapter);
+        spinnerTo.setSelection(3);
 
         hmLanguages = new HashMap<String, String>();
-        hmLanguages.put("Select", "null");
+        hmLanguages.put("Auto Detect", "null");
+        hmLanguages.put("English", "en");
         hmLanguages.put("Russian", "ru");
         hmLanguages.put("Polish", "pl");
-        hmLanguages.put("English", "en");
         hmLanguages.put("German", "de");
         hmLanguages.put("French", "fr");
         hmLanguages.put("Spanish", "es");
@@ -127,13 +154,15 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btnTranslate:
-                if (hmLanguages.get(spinnerFrom.getSelectedItem()).equals("null")) {
-                    detectLanguageRequest(etInput.getText().toString());
-                } else {
-                    translateRequest(hmLanguages.get(spinnerFrom.getSelectedItem()),
-                            hmLanguages.get(spinnerTo.getSelectedItem()));
+                if (!etInput.getText().toString().equals("")) {
+                    searchedItems.add(etInput.getText().toString());
+                    if (hmLanguages.get(spinnerFrom.getSelectedItem()).equals("null")) {
+                        detectLanguageRequest(etInput.getText().toString());
+                    } else {
+                        translateRequest(hmLanguages.get(spinnerFrom.getSelectedItem()),
+                                hmLanguages.get(spinnerTo.getSelectedItem()));
+                    }
                 }
-
                 break;
             case R.id.rlDictionaryActivity:
                 AppUtils.hideKeyboard(DictionaryTestApp.this);
@@ -181,7 +210,8 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
         } else {
             dictionary = gson.fromJson(jsonResponse, Dictionary.class);
             tvOutput.setText(dictionary.getText().get(0));
-            speakOut();
+            Locale selectedLocale = new Locale(hmLanguages.get(item));
+            speakOut(selectedLocale);
         }
     }
 
@@ -198,15 +228,22 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
+        if (id == R.id.search_history) {
+            searchHistory.setHistoryList(searchedItems);
+            HashMap<String, Serializable> postIntentData = new HashMap<String, Serializable>();
+            postIntentData.put("SearchHistoryList", searchHistory);
+            Log.d("Search History List >>>", searchHistory.toString());
+            AppUtils.gotoActivityWithResult(DictionaryTestApp.this, SearchHistoryActivity.class, postIntentData, 1);
             return true;
+        } if (id == R.id.about){
+            // Will be completed soon.
         }
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-        // item = adapterView.getSelectedItem().toString();
+        item = adapterView.getSelectedItem().toString();
         Log.d("ITEM>>> ", adapterView.getSelectedItem().toString());
     }
 
@@ -269,14 +306,16 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
 
-            int result = tts.setLanguage(Locale.US);
+            Locale selectedLocale = new Locale(hmLanguages.get(item));
+
+            int result = tts.setLanguage(selectedLocale);
 
             if (result == TextToSpeech.LANG_MISSING_DATA
                     || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 Log.e("TTS", "This Language is not supported");
             } else {
                 // btnSpeak.setEnabled(true);
-                speakOut();
+                speakOut(selectedLocale);
             }
 
         } else {
@@ -284,10 +323,11 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
         }
     }
 
-    private void speakOut() {
+    private void speakOut(Locale selectedLocale) {
 
         String text = tvOutput.getText().toString();
 
+        tts.setLanguage(selectedLocale);
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
     }
 }
