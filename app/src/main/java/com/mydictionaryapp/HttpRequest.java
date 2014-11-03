@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.util.Log;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
 import com.android.volley.AuthFailureError;
@@ -18,6 +19,8 @@ import com.mydictionaryapp.utils.AppUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import fr.castorflex.android.circularprogressbar.CircularProgressDrawable;
 
 /**
  * Created by AliMert on 7.9.2014.
@@ -34,11 +37,14 @@ public class HttpRequest {
     public void makeHttpPostWithVolley(String baseUrl, final Map<String, String> hmParams, boolean isProgressDialogEnabled){
         RequestQueue queue = Volley.newRequestQueue(myActivity);
 
-        final ProgressDialog pDialog = new ProgressDialog(myActivity);
-        pDialog.setMessage("Loading...");
+        final ProgressDialog progressDialog = new ProgressDialog(myActivity);
+        progressDialog.setCancelable(false);
+
         if (isProgressDialogEnabled == true){
-            pDialog.show();
+            progressDialog.show();
         }
+
+        progressDialog.setContentView(R.layout.progress_dialog_layout);
 
         StringRequest getRequest = new StringRequest(Request.Method.POST, baseUrl,
                 new Response.Listener<String>()
@@ -48,7 +54,8 @@ public class HttpRequest {
                         Log.d("Response >>> ", response.toString());
                         httpCallback = (HttpRequestCallback) myActivity;
                         httpCallback.callback(response);
-                        pDialog.hide();
+                        progressDialog.hide();
+
                     }
                 },
                 new Response.ErrorListener()
@@ -57,7 +64,7 @@ public class HttpRequest {
                     public void onErrorResponse(VolleyError error) {
                         AppUtils.showToast(myActivity, error.toString());
                         Log.d("Error.Response", error.toString());
-                        pDialog.hide();
+                        progressDialog.hide();
                     }
                 }
         ){

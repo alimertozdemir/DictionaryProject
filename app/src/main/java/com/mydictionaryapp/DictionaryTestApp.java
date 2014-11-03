@@ -1,12 +1,13 @@
 
 package com.mydictionaryapp;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -26,7 +27,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,8 +35,8 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.gson.Gson;
 import com.mydictionaryapp.model.Dictionary;
-import com.mydictionaryapp.model.SearchHistoryBeans;
 import com.mydictionaryapp.utils.AppUtils;
+import com.mydictionaryapp.utils.SharedPreference;
 
 public class DictionaryTestApp extends Activity implements OnClickListener, OnItemSelectedListener,
         HttpRequestCallback, TextToSpeech.OnInitListener {
@@ -58,8 +58,8 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
     private String item = "English";
     private ImageButton ibMic;
     private TextToSpeech tts;
-    ArrayList<String> searchedItems = new ArrayList<String>(50);
-    SearchHistoryBeans searchHistory = new SearchHistoryBeans();
+    SharedPreference myPrefs = new SharedPreference();
+    android.content.SharedPreferences.Editor editor = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,13 +109,6 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
             }
         });
 
-        /* etInput.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean b) {
-                adView.setVisibility(b ? View.INVISIBLE : View.VISIBLE);
-            }
-        }); */
-
         List<String> languages = new ArrayList<String>();
         languages.add("Auto Detect");
         languages.add("Russian");
@@ -148,20 +141,27 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
         spinnerFrom.setOnItemSelectedListener(this);
         spinnerTo.setOnItemSelectedListener(this);
 
+        String historyItem = (String) getIntent().getSerializableExtra("SearchedHistoryItem");
+        etInput.setText(historyItem);
+
     }
 
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btnTranslate:
-                if (!etInput.getText().toString().equals("")) {
-                    searchedItems.add(etInput.getText().toString());
+                if (!etInput.getText().toString().trim().equals("")) {
+                    // Add searchItem to SharedPrefs
+                    myPrefs.addHistory(DictionaryTestApp.this, etInput.getText().toString());
                     if (hmLanguages.get(spinnerFrom.getSelectedItem()).equals("null")) {
                         detectLanguageRequest(etInput.getText().toString());
                     } else {
                         translateRequest(hmLanguages.get(spinnerFrom.getSelectedItem()),
                                 hmLanguages.get(spinnerTo.getSelectedItem()));
                     }
+                } else {
+                    AppUtils.showToast(DictionaryTestApp.this, "Please type search item inside the box");
+                    etInput.requestFocus();
                 }
                 break;
             case R.id.rlDictionaryActivity:
@@ -229,11 +229,7 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.search_history) {
-            searchHistory.setHistoryList(searchedItems);
-            HashMap<String, Serializable> postIntentData = new HashMap<String, Serializable>();
-            postIntentData.put("SearchHistoryList", searchHistory);
-            Log.d("Search History List >>>", searchHistory.toString());
-            AppUtils.gotoActivityWithResult(DictionaryTestApp.this, SearchHistoryActivity.class, postIntentData, 1);
+            AppUtils.gotoActivity(DictionaryTestApp.this, SearchHistoryActivity.class, null, false);
             return true;
         } if (id == R.id.about){
             // Will be completed soon.
@@ -270,6 +266,9 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
                 break;
             }
 
+            case 2:
+                String historyItem = (String) getIntent().getSerializableExtra("SearchedHistoryItem");
+                etInput.setText(historyItem);
         }
     }
 

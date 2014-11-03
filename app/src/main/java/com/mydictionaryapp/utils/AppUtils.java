@@ -58,4 +58,25 @@ public class AppUtils {
         activity.startActivityForResult(intent, requestCode);
     }
 
+    public static void gotoActivity(Activity activity, Class nextActivityClass, HashMap<String, Serializable> postIntentData, boolean closeCurrentActivity){
+        Intent intent = new Intent(activity, nextActivityClass);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        if (postIntentData != null){
+            Iterator<Map.Entry<String, Serializable>> it = postIntentData.entrySet().iterator();
+            while (it.hasNext()){
+                Map.Entry<String, Serializable> entry = it.next();
+                String key = entry.getKey();
+                Serializable value = entry.getValue();
+                intent.putExtra(key, value);
+            }
+        }
+        activity.startActivity(intent);
+
+        if (closeCurrentActivity){
+            activity.finish();
+        }
+
+    }
+
 }

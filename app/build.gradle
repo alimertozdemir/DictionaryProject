@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 20
-    buildToolsVersion "20.0.0"
+    buildToolsVersion '20.0.0'
 
     defaultConfig {
         applicationId "com.mydictionaryapp"
@@ -26,5 +26,6 @@ dependencies {
     compile 'com.google.android.gms:play-services:5.2.08'
     compile 'com.android.support:appcompat-v7:20.0.0'
     compile 'com.google.android.gms:play-services:4.+'
+    compile 'com.github.castorflex.smoothprogressbar:library-circular:1.+'
 }
 
