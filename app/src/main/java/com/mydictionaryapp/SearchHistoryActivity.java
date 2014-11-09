@@ -1,6 +1,7 @@
 
 package com.mydictionaryapp;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
@@ -30,6 +31,9 @@ public class SearchHistoryActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search_history);
 
+        ActionBar actionBar = getActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
+
         listView = (ListView) findViewById(R.id.lvSearchHistory);
         populateListView();
 
@@ -37,8 +41,8 @@ public class SearchHistoryActivity extends Activity {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 postIntentData.put("SearchedHistoryItem",
-                        myPrefs.getHistories(SearchHistoryActivity.this).get(i));
-                Log.d("HISTORY ITEM SELECTED : ", myPrefs.getHistories(SearchHistoryActivity.this)
+                        myPrefs.getHistories("Search_History", SearchHistoryActivity.this).get(i));
+                Log.d("HISTORY ITEM SELECTED : ", myPrefs.getHistories("Search_History", SearchHistoryActivity.this)
                         .get(i));
                 AppUtils.gotoActivity(SearchHistoryActivity.this,
                         DictionaryTestApp.class, postIntentData, true);
@@ -52,7 +56,7 @@ public class SearchHistoryActivity extends Activity {
 
     public void populateListView() {
         adapter = new SearchHistoryAdapter(getApplicationContext(),
-                myPrefs.getHistories(SearchHistoryActivity.this));
+                myPrefs.getHistories("Search_History", SearchHistoryActivity.this));
         listView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
     }
@@ -68,7 +72,7 @@ public class SearchHistoryActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.clean_history) {
-            myPrefs.removeAllHistory(SearchHistoryActivity.this);
+            myPrefs.removeAllHistory("Search_History", SearchHistoryActivity.this);
             populateListView();
             return true;
         }

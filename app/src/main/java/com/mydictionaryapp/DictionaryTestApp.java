@@ -3,11 +3,9 @@ package com.mydictionaryapp;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -15,6 +13,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
+import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -27,6 +26,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ShareActionProvider;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -46,20 +46,21 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
     String translateURL = "https://translate.yandex.net/api/v1.5/tr.json/translate"; // ?key=trnsl.1.1.20140304T071909Z.b9e89fae4d489cf1.6486d3ae866bfe9c6a389b84cc61e5d860cf0112&lang=en-tr&text=dog";
     String detectURL = "https://translate.yandex.net/api/v1.5/tr.json/detect";
     String apiKey = "trnsl.1.1.20140304T071909Z.b9e89fae4d489cf1.6486d3ae866bfe9c6a389b84cc61e5d860cf0112";
-    String httpOutput;
+    String translatedText = "";
     HttpRequest httpRequest;
     Map<String, String> params = new HashMap<String, String>();
-    private Dictionary dictionary;
+    private Dictionary dictionary = null;
     private EditText etInput;
     private TextView tvOutput;
     private Button btnSend;
     private Gson gson;
     private Spinner spinnerFrom, spinnerTo;
     private String item = "English";
-    private ImageButton ibMic;
+    private ImageButton ibMicWhite, ibMicRed;
     private TextToSpeech tts;
-    SharedPreference myPrefs = new SharedPreference();
-    android.content.SharedPreferences.Editor editor = null;
+    SharedPreference mySearchHistoryPrefs = new SharedPreference();
+    SharedPreference myTranslateHistoryPrefs = new SharedPreference();
+    ShareActionProvider myShareActionProvider = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,14 +75,18 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
         btnSend.setOnClickListener(this);
         httpRequest = new HttpRequest(DictionaryTestApp.this);
 
-        //RelativeLayout layoutDictionaryActivity = (RelativeLayout) findViewById(R.id.rlDictionaryActivity);
+        // RelativeLayout layoutDictionaryActivity = (RelativeLayout)
+        // findViewById(R.id.rlDictionaryActivity);
         // layoutDictionaryActivity.setOnClickListener(this);
 
         spinnerFrom = (Spinner) findViewById(R.id.languageFrom);
         spinnerTo = (Spinner) findViewById(R.id.languageTo);
 
-        ibMic = (ImageButton) findViewById(R.id.ibMic);
-        ibMic.setOnClickListener(this);
+        ibMicWhite = (ImageButton) findViewById(R.id.ibMicWhite);
+        ibMicWhite.setOnClickListener(this);
+
+        ibMicRed = (ImageButton) findViewById(R.id.ibMicRed);
+        ibMicRed.setOnClickListener(this);
 
         final AdView adView = (AdView) this.findViewById(R.id.adMob);
         // request TEST ads to avoid being disabled for clicking your own ads
@@ -95,19 +100,22 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
         adView.loadAd(adRequest);
 
         final View activityRootView = findViewById(R.id.rlDictionaryActivity);
-        activityRootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                int heightDiff = activityRootView.getRootView().getHeight() - activityRootView.getHeight();
-                if (heightDiff > 200) { // if more than 100 pixels, its probably a keyboard...
-                    adView.setVisibility(View.GONE);
-                    Log.d("View Tree Observer : ", "Klavye açıldı > " + heightDiff);
-                } else {
-                    Log.d("View Tree Observer : ", "Klavye kapandı > " + heightDiff);
-                    adView.setVisibility(View.VISIBLE);
-                }
-            }
-        });
+        activityRootView.getViewTreeObserver().addOnGlobalLayoutListener(
+                new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        int heightDiff = activityRootView.getRootView().getHeight()
+                                - activityRootView.getHeight();
+                        if (heightDiff > 200) { // if more than 100 pixels, its
+                                                // probably a keyboard...
+                            adView.setVisibility(View.GONE);
+                            Log.d("View Tree Observer : ", "Klavye açıldı > " + heightDiff);
+                        } else {
+                            Log.d("View Tree Observer : ", "Klavye kapandı > " + heightDiff);
+                            adView.setVisibility(View.VISIBLE);
+                        }
+                    }
+                });
 
         List<String> languages = new ArrayList<String>();
         languages.add("Auto Detect");
@@ -152,7 +160,8 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
             case R.id.btnTranslate:
                 if (!etInput.getText().toString().trim().equals("")) {
                     // Add searchItem to SharedPrefs
-                    myPrefs.addHistory(DictionaryTestApp.this, etInput.getText().toString());
+                    mySearchHistoryPrefs.addHistory("Search_History", DictionaryTestApp.this,
+                            etInput.getText().toString());
                     if (hmLanguages.get(spinnerFrom.getSelectedItem()).equals("null")) {
                         detectLanguageRequest(etInput.getText().toString());
                     } else {
@@ -160,7 +169,8 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
                                 hmLanguages.get(spinnerTo.getSelectedItem()));
                     }
                 } else {
-                    AppUtils.showToast(DictionaryTestApp.this, "Please type search item inside the box");
+                    AppUtils.showToast(DictionaryTestApp.this,
+                            "Please type search item inside the box");
                     etInput.requestFocus();
                 }
                 break;
@@ -168,7 +178,12 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
                 AppUtils.hideKeyboard(DictionaryTestApp.this);
                 break;
 
-            case R.id.ibMic:
+            case R.id.ibMicWhite:
+                ibMicWhite.setVisibility(View.GONE);
+                ibMicRed.setVisibility(View.VISIBLE);
+                promptSpeechInput();
+                break;
+            case R.id.ibMicRed:
                 promptSpeechInput();
                 break;
             default:
@@ -210,6 +225,10 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
         } else {
             dictionary = gson.fromJson(jsonResponse, Dictionary.class);
             tvOutput.setText(dictionary.getText().get(0));
+            myTranslateHistoryPrefs.addHistory("Translate_History", DictionaryTestApp.this,
+                    dictionary.getText().get(0));
+            translatedText = dictionary.getText().get(0);
+            setShareIntent(translatedText);
             Locale selectedLocale = new Locale(hmLanguages.get(item));
             speakOut(selectedLocale);
         }
@@ -219,7 +238,10 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.dictionary, menu);
-        return true;
+        MenuItem item = menu.findItem(R.id.menu_item_share);
+        myShareActionProvider = (ShareActionProvider) item.getActionProvider();
+        setShareIntent(translatedText);
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override
@@ -231,10 +253,26 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
         if (id == R.id.search_history) {
             AppUtils.gotoActivity(DictionaryTestApp.this, SearchHistoryActivity.class, null, false);
             return true;
-        } if (id == R.id.about){
+        }
+        if (id == R.id.about) {
             // Will be completed soon.
         }
+
         return super.onOptionsItemSelected(item);
+    }
+
+    private void setShareIntent(String translatedText){
+
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+
+        Log.d("TRANSLATED TEXT > ", translatedText);
+        intent.putExtra(Intent.EXTRA_TEXT, translatedText
+                + "\n"
+                + (Html.fromHtml("<b>" + "Translated via Talking Dictionary." + "</b>")));
+
+        myShareActionProvider.setShareIntent(intent);
+
     }
 
     @Override
@@ -257,8 +295,9 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
 
         switch (requestCode) {
             case REQ_CODE_SPEECH_INPUT: {
+                ibMicWhite.setVisibility(View.VISIBLE);
+                ibMicRed.setVisibility(View.GONE);
                 if (resultCode == RESULT_OK && null != data) {
-
                     ArrayList<String> result = data
                             .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     etInput.setText(result.get(0));
@@ -267,7 +306,8 @@ public class DictionaryTestApp extends Activity implements OnClickListener, OnIt
             }
 
             case 2:
-                String historyItem = (String) getIntent().getSerializableExtra("SearchedHistoryItem");
+                String historyItem = (String) getIntent().getSerializableExtra(
+                        "SearchedHistoryItem");
                 etInput.setText(historyItem);
         }
     }

@@ -8,13 +8,14 @@
         <item name="android:windowContentOverlay">@drawable/actionbar_shadow</item>
         <item name="android:popupMenuStyle">@style/AppTheme_ActionBar_PopupMenu</item>
         <item name="android:actionBarWidgetTheme">@style/AppTheme_ActionBar_Overflow_Menu</item>
+        <item name="android:dropDownSpinnerStyle">@style/AppTheme_Spinner</item>
         <item name="cpbStyle">@style/CircularProgressBar</item>
     </style>
 
     <style name="AppTheme_ActionBar" parent="android:Widget.Holo.ActionBar.Solid">
-        <item name="android:icon">@drawable/actionbar_icon_placeholder_compat</item>
+        <item name="android:icon">@drawable/ic_launcher</item>
         <item name="android:titleTextStyle">@style/AppTheme_ActionBar_Title</item>
-        <item name="android:background">@color/apptheme_primary_dark</item>
+        <item name="android:background">@color/cyan</item>
         <item name="android:popupMenuStyle">@style/AppTheme_ActionBar_PopupMenu</item>
     </style>
 
@@ -33,6 +34,12 @@
 
     <style name="AppTheme_ActionBar_PopupMenu" parent="android:Widget.Holo.Light.ListPopupWindow">
         <item name="android:popupBackground">@drawable/menu_dropdown_panel_example</item>
+    </style>
+
+
+    <style name="AppTheme_Spinner" parent="android:Widget.Holo.Light.Spinner">
+        <item name="android:background">@drawable/apptheme_spinner_background_holo_light</item>
+        <!--<item name="android:dropDownSelector">@drawable/apptheme_list_selector_holo_light</item>-->
     </style>
 
     <style name="EditTextStyle" parent="@android:style/Widget.EditText">

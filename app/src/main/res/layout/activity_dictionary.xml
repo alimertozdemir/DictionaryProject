@@ -33,16 +33,18 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:alpha="10"
-                    android:scrollbars="vertical"
                     android:hint="Touch the microphone to speak or write down your text please"
                     android:maxLines="3"
-                    android:shadowRadius="2"
+                    android:minHeight="100dp"
+                    android:scrollbars="vertical"
                     android:shadowColor="@android:color/darker_gray"
-                    android:minHeight="98dp" />
+                    android:shadowRadius="2" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:layout_marginTop="4dp"
                     android:orientation="horizontal">
 
                     <Spinner
@@ -64,18 +66,28 @@
 
                 </LinearLayout>
 
-                <Button
-                    android:id="@+id/btnTranslate"
+                <LinearLayout
                     android:layout_width="fill_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginLeft="52dp"
-                    android:layout_marginRight="52dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
                     android:layout_marginTop="4dp"
-                    android:text="Translate"
-                    android:textColor="@android:color/white"
-                    android:background="@drawable/button_selector"
-                    android:textSize="20dp"
-                    android:theme="@android:style/Theme.Translucent" />
+                    android:orientation="vertical">
+
+                    <Button
+                        android:id="@+id/btnTranslate"
+                        android:layout_width="fill_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginLeft="52dp"
+                        android:layout_marginRight="52dp"
+                        android:background="@drawable/button_selector"
+                        android:text="TRANSLATE"
+                        android:textColor="@android:color/white"
+                        android:textSize="18dp"
+                        android:textStyle="bold"
+                        android:theme="@android:style/Theme.Translucent" />
+
+                </LinearLayout>
+
 
                 <TextView
                     android:id="@+id/tvOutput"
@@ -84,8 +96,8 @@
                     android:layout_height="match_parent"
                     android:layout_marginTop="6dp"
                     android:alpha="10"
-                    android:maxLines="3"
-                    android:minHeight="98dp"
+                    android:maxLines="4"
+                    android:minHeight="100dp"
                     android:scrollbars="vertical"
                     android:text="@null" />
             </LinearLayout>
@@ -97,12 +109,25 @@
                 android:orientation="vertical">
 
                 <ImageButton
-                    android:id="@+id/ibMic"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:id="@+id/ibMicWhite"
+                    android:layout_width="84dp"
+                    android:layout_height="84dp"
                     android:layout_gravity="top|center"
-                    android:background="@null"
-                    android:src="@drawable/ico_mic" />
+                    android:layout_margin="5dp"
+                    android:background="@drawable/elipse"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_mic_l_white" />
+
+                <ImageButton
+                    android:id="@+id/ibMicRed"
+                    android:layout_width="84dp"
+                    android:layout_height="84dp"
+                    android:layout_gravity="top|center"
+                    android:layout_margin="5dp"
+                    android:background="@drawable/elipse"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_mic_l_red"
+                    android:visibility="gone" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
